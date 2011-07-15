@@ -96,7 +96,6 @@ public final class Main {
         String modulePath = null;
         String bootJar = null;
         String logModule = "org.jboss.logmanager";
-        String jaxpModule = "javax.xml.jaxp-provider";
         String bootModule = HOST_CONTROLLER_MODULE;
         String bindAddress = "127.0.0.1";
         int bindPort = 0;
@@ -123,8 +122,6 @@ public final class Main {
                 bootJar = args[++i];
             } else if ("-logmodule".equals(arg)) {
                 logModule = args[++i];
-            } else if ("-jaxpmodule".equals(arg)) {
-                jaxpModule = args[++i];
             } else if (CommandLineConstants.BIND_ADDR.equals(arg) || CommandLineConstants.OLD_BIND_ADDR.equals(arg)) {
                 bindAddress = args[++i];
             } else if (arg.startsWith(CommandLineConstants.BIND_ADDR)) {
@@ -231,8 +228,6 @@ public final class Main {
         initialCommand.add(modulePath);
         initialCommand.add("-logmodule");
         initialCommand.add(logModule);
-        initialCommand.add("-jaxpmodule");
-        initialCommand.add(jaxpModule);
         initialCommand.add(bootModule);
         initialCommand.add(CommandLineConstants.INTERPROCESS_PC_ADDRESS);
         initialCommand.add(boundAddress.getHostName());
