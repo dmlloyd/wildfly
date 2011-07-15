@@ -115,8 +115,6 @@ public class EmbeddedServerFactory {
                 Thread.currentThread().setContextClassLoader(ctxClassLoader);
             }
 
-            __redirected.__JAXPRedirected.changeAll(ModuleIdentifier.fromString("javax.xml.jaxp-provider"), moduleLoader);
-
             return create(moduleLoader, jbossHomeDir, systemProps, systemEnv);
         }
         catch (ModuleLoadException e) {

@@ -131,8 +131,6 @@ public final class ManagedDeployableContainer extends CommonDeployableContainer<
             cmd.add(modulePath);
             cmd.add("-logmodule");
             cmd.add("org.jboss.logmanager");
-            cmd.add("-jaxpmodule");
-            cmd.add("javax.xml.jaxp-provider");
 //            cmd.add("-server-config");
 //            cmd.add(jbossHomeDir + "/standalone/configuration/clustering-standalone.xml");
             cmd.add("org.jboss.as.standalone");
