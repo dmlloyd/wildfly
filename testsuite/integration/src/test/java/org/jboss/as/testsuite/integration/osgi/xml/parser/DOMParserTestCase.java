@@ -81,7 +81,7 @@ public class DOMParserTestCase extends OSGiTestSupport {
                 OSGiManifestBuilder builder = OSGiManifestBuilder.newInstance();
                 builder.addBundleSymbolicName(archive.getName());
                 builder.addBundleManifestVersion(2);
-                builder.addImportPackages(StartLevel.class);
+                builder.addImportPackages(StartLevel.class, DocumentBuilder.class, Document.class);
                 return builder.openStream();
             }
         });
