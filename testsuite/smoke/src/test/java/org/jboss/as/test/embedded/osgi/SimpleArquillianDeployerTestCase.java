@@ -47,7 +47,7 @@ import org.osgi.service.packageadmin.PackageAdmin;
  * @since 09-Sep-2010
  */
 @RunWith(Arquillian.class)
-public class SimpleArchiveDeployerTestCase {
+public class SimpleArquillianDeployerTestCase {
 
     private static final String DEPLOYMENT_NAME = "arquillian-deployer-test-bundle";
 

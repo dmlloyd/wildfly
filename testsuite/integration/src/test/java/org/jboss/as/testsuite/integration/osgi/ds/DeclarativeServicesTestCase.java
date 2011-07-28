@@ -52,7 +52,7 @@ import org.osgi.util.tracker.ServiceTracker;
  * @since 06-Jul-2011
  */
 @RunWith(Arquillian.class)
-public class DynamicServicesTestCase extends OSGiTestSupport {
+public class DeclarativeServicesTestCase extends OSGiTestSupport {
 
     @Inject
     public BundleContext context;

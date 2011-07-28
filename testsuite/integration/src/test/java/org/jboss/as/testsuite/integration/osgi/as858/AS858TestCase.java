@@ -31,8 +31,6 @@ import javax.naming.NamingException;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.as.server.moduleservice.ModuleLoadService;
-import org.jboss.as.server.moduleservice.ServiceModuleLoader;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleSpec;
@@ -66,13 +64,13 @@ public class AS858TestCase {
     public static Archive<?> deployment() {
         JavaArchive archive = ShrinkWrap.create(JavaArchive.class, "as858");
         archive.add(new Asset() {
-                    @Override
-                    public InputStream openStream() {
-                        ManifestBuilder builder = ManifestBuilder.newInstance();
-                        builder.addManifestHeader("Dependencies", "org.jboss.as.osgi,org.jboss.osgi.framework");
-                        return builder.openStream();
-                    }
-                }, JarFile.MANIFEST_NAME);
+            @Override
+            public InputStream openStream() {
+                ManifestBuilder builder = ManifestBuilder.newInstance();
+                builder.addManifestHeader("Dependencies", "org.jboss.as.osgi,org.jboss.osgi.framework");
+                return builder.openStream();
+            }
+        }, JarFile.MANIFEST_NAME);
         return archive;
     }
 
@@ -88,7 +86,8 @@ public class AS858TestCase {
             Module module = loaderProvider.getModuleLoader().loadModule(identifier);
             assertEquals(identifier, module.getIdentifier());
         } finally {
-            ServiceController<?> controller = serviceContainer.getService(ServiceName.JBOSS.append("module", "spec", "service", identifier.getName(), identifier.getSlot()));
+            ServiceController<?> controller = serviceContainer.getService(ServiceName.JBOSS.append("module", "spec", "service", identifier.getName(),
+                    identifier.getSlot()));
             if (controller != null) {
                 controller.setMode(ServiceController.Mode.REMOVE);
             }
