@@ -38,6 +38,7 @@ import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.as.testsuite.integration.osgi.xservice.api.Echo;
 import org.jboss.as.testsuite.integration.osgi.xservice.bundle.TargetBundleActivator;
 import org.jboss.logging.Logger;
+import org.jboss.modules.Module;
 import org.jboss.osgi.testing.OSGiManifestBuilder;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.Asset;
@@ -76,7 +77,7 @@ public class StatelessBeanIntegrationTestCase {
                 builder.addBundleSymbolicName(archive.getName());
                 builder.addBundleManifestVersion(2);
                 builder.addBundleActivator(TargetBundleActivator.class);
-                builder.addImportPackages(BundleActivator.class, Logger.class);
+                builder.addImportPackages(BundleActivator.class, Logger.class, Module.class, InitialContext.class);
                 return builder.openStream();
             }
         });
