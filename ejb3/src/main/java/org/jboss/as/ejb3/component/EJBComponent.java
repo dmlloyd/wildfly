@@ -24,7 +24,6 @@ package org.jboss.as.ejb3.component;
 import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.Principal;
-import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
 import java.util.Collections;
 import java.util.Map;
@@ -45,7 +44,6 @@ import javax.transaction.UserTransaction;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.jboss.as.core.security.ServerSecurityManager;
 import org.jboss.as.ee.component.BasicComponent;
 import org.jboss.as.ee.component.ComponentView;
 import org.jboss.as.ejb3.component.allowedmethods.AllowedMethodsInformation;
@@ -70,6 +68,9 @@ import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.wildfly.extension.requestcontroller.ControlPoint;
+import org.wildfly.security.auth.principal.AnonymousPrincipal;
+import org.wildfly.security.auth.server.SecurityDomain;
+import org.wildfly.security.auth.server.SecurityIdentity;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -99,7 +100,6 @@ public abstract class EJBComponent extends BasicComponent implements ServerActiv
     private final String earApplicationName;
     private final String moduleName;
     private final String distinctName;
-    private final String policyContextID;
     private final EJBRemoteTransactionsRepository ejbRemoteTransactionsRepository;
 
     private final InvocationMetrics invocationMetrics = new InvocationMetrics();
@@ -107,16 +107,10 @@ public abstract class EJBComponent extends BasicComponent implements ServerActiv
     private final TransactionManager transactionManager;
     private final TransactionSynchronizationRegistry transactionSynchronizationRegistry;
     private final UserTransaction userTransaction;
-    private final ServerSecurityManager serverSecurityManager;
     private final ControlPoint controlPoint;
     private final AtomicBoolean exceptionLoggingEnabled;
 
-    private final PrivilegedAction<Principal> getCaller = new PrivilegedAction<Principal>() {
-        @Override
-        public Principal run() {
-            return serverSecurityManager.getCallerPrincipal();
-        }
-    };
+    private final SecurityDomain securityDomain;
 
     /**
      * Construct a new instance.
@@ -154,7 +148,6 @@ public abstract class EJBComponent extends BasicComponent implements ServerActiv
         this.applicationName = ejbComponentCreateService.getApplicationName();
         this.earApplicationName = ejbComponentCreateService.getEarApplicationName();
         this.distinctName = ejbComponentCreateService.getDistinctName();
-        this.policyContextID = ejbComponentCreateService.getPolicyContextID();
         this.moduleName = ejbComponentCreateService.getModuleName();
         this.ejbObjectViewServiceName = ejbComponentCreateService.getEjbObject();
         this.ejbLocalObjectViewServiceName = ejbComponentCreateService.getEjbLocalObject();
@@ -165,9 +158,10 @@ public abstract class EJBComponent extends BasicComponent implements ServerActiv
         this.transactionManager = ejbComponentCreateService.getTransactionManager();
         this.transactionSynchronizationRegistry = ejbComponentCreateService.getTransactionSynchronizationRegistry();
         this.userTransaction = ejbComponentCreateService.getUserTransaction();
-        this.serverSecurityManager = ejbComponentCreateService.getServerSecurityManager();
         this.controlPoint = ejbComponentCreateService.getControlPoint();
         this.exceptionLoggingEnabled = ejbComponentCreateService.getExceptionLoggingEnabled();
+
+        this.securityDomain = null; //TODO
     }
 
     protected <T> T createViewInstanceProxy(final Class<T> viewInterface, final Map<Object, Object> contextData) {
@@ -251,11 +245,8 @@ public abstract class EJBComponent extends BasicComponent implements ServerActiv
     }
 
     public Principal getCallerPrincipal() {
-        if(WildFlySecurityManager.isChecking()) {
-            return WildFlySecurityManager.doUnchecked(getCaller);
-        } else {
-            return this.serverSecurityManager.getCallerPrincipal();
-        }
+        SecurityIdentity identity = securityDomain.getCurrentSecurityIdentity();
+        return identity.getPrincipal();
     }
 
     protected TransactionAttributeType getCurrentTransactionAttribute() {
@@ -272,7 +263,11 @@ public abstract class EJBComponent extends BasicComponent implements ServerActiv
         final ServiceController<?> serviceController = currentServiceContainer().getRequiredService(ejbHomeViewServiceName);
         final ComponentView view = (ComponentView) serviceController.getValue();
         final String locatorAppName = earApplicationName == null ? "" : earApplicationName;
-        return EJBClient.createProxy(new EJBHomeLocator<EJBHome>((Class<EJBHome>) view.getViewClass(), locatorAppName, moduleName, getComponentName(), distinctName));
+        return EJBClient.createProxy(createHomeLocator(view.getViewClass().asSubclass(EJBHome.class), locatorAppName, moduleName, getComponentName(), distinctName));
+    }
+
+    private static <T extends EJBHome> EJBHomeLocator<T> createHomeLocator(Class<T> viewClass, String appName, String moduleName, String beanName, String distinctName) {
+        return new EJBHomeLocator<T>(viewClass, appName, moduleName, beanName, distinctName);
     }
 
     public Class<?> getEjbObjectType() {
@@ -332,10 +327,6 @@ public abstract class EJBComponent extends BasicComponent implements ServerActiv
         }
     }
 
-    public ServerSecurityManager getSecurityManager() {
-        return this.serverSecurityManager;
-    }
-
     public TimerService getTimerService() throws IllegalStateException {
         return timerService;
     }
@@ -390,15 +381,8 @@ public abstract class EJBComponent extends BasicComponent implements ServerActiv
     }
 
     public boolean isCallerInRole(final String roleName) throws IllegalStateException {
-        if (WildFlySecurityManager.isChecking()) {
-            return WildFlySecurityManager.doUnchecked(new PrivilegedAction<Boolean>() {
-                public Boolean run() {
-                    return serverSecurityManager.isCallerInRole(getComponentName(), policyContextID, securityMetaData.getSecurityRoles(), securityMetaData.getSecurityRoleLinks(), roleName);
-                }
-            });
-        } else {
-            return this.serverSecurityManager.isCallerInRole(getComponentName(), policyContextID, securityMetaData.getSecurityRoles(), securityMetaData.getSecurityRoleLinks(), roleName);
-        }
+        SecurityIdentity identity = securityDomain.getCurrentSecurityIdentity();
+        return "**".equals(roleName) ? ! (identity.getPrincipal() instanceof AnonymousPrincipal) : identity.getRoles("ejb").contains(roleName);
     }
 
     public boolean isStatisticsEnabled() {
