@@ -24,6 +24,7 @@ package org.jboss.as.ejb3.component.interceptors;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.concurrent.Callable;
 
 import org.jboss.as.ee.component.Component;
 import org.jboss.as.ee.component.interceptors.InvocationType;
@@ -34,9 +35,8 @@ import org.jboss.invocation.InterceptorContext;
 import org.jboss.invocation.InterceptorFactory;
 import org.jboss.invocation.InterceptorFactoryContext;
 import org.jboss.remoting3.Connection;
-import org.jboss.security.SecurityContext;
-import org.jboss.security.SecurityContextAssociation;
-import org.jboss.security.plugins.JBossSecurityContext;
+import org.wildfly.security.auth.server.SecurityDomain;
+import org.wildfly.security.auth.server.SecurityIdentity;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -68,47 +68,34 @@ public final class AsyncFutureInterceptorFactory implements InterceptorFactory {
         return new Interceptor() {
             @Override
             public Object processInvocation(final InterceptorContext context) throws Exception {
+                if (! context.isBlockingCaller()) {
+                    return context.proceed();
+                }
                 final InterceptorContext asyncInterceptorContext = context.clone();
                 asyncInterceptorContext.putPrivateData(InvocationType.class, InvocationType.ASYNC);
                 final CancellationFlag flag = new CancellationFlag();
-                final SecurityContext securityContext;
-                if(WildFlySecurityManager.isChecking()) {
-                    securityContext = AccessController.doPrivileged(new PrivilegedAction<SecurityContext>() {
-                        @Override
-                        public SecurityContext run() {
-                            return SecurityContextAssociation.getSecurityContext();
-                        }
-                    });
-                } else {
-                    securityContext = SecurityContextAssociation.getSecurityContext();
-                }
-                // clone the original security context so that changes to the original security context in a separate (caller/unrelated) thread doesn't affect
-                // the security context associated with the async invocation thread
-                final SecurityContext clonedSecurityContext;
-                if (securityContext instanceof JBossSecurityContext) {
-                    clonedSecurityContext = (SecurityContext) ((JBossSecurityContext) securityContext).clone();
-                } else {
-                    // we can't do anything if it isn't a JBossSecurityContext so just use the original one
-                    clonedSecurityContext = securityContext;
-                }
+
+                final SecurityDomain securityDomain = context.getPrivateData(SecurityDomain.class);
+                final SecurityIdentity currentIdentity = securityDomain.getCurrentSecurityIdentity();
+
                 final Connection remoteConnection = getConnection();
                 final AsyncInvocationTask task = new AsyncInvocationTask(flag) {
                     @Override
                     protected Object runInvocation() throws Exception {
-                        setSecurityContextOnAssociation(clonedSecurityContext);
-                        setConnection(remoteConnection);
-                        try {
-                            return asyncInterceptorContext.proceed();
-                        } finally {
-                            try {
-                                clearSecurityContextOnAssociation();
-                            } finally {
-                                clearConnection();
+                        return currentIdentity.runAs(new Callable<Object>() {
+                            public Object call() throws Exception {
+                                setConnection(remoteConnection);
+                                try {
+                                    return asyncInterceptorContext.proceed();
+                                } finally {
+                                    clearConnection();
+                                }
                             }
-                        }
+                        });
                     }
                 };
                 asyncInterceptorContext.putPrivateData(CancellationFlag.class, flag);
+                asyncInterceptorContext.setBlockingCaller(false);
                 // This interceptor runs in user application's context classloader. Triggering an execute via an executor service from here can potentially lead to
                 // new thread creation which will assign themselves the context classloader of the parent thread (i.e. this thread). This effectively can lead to
                 // deployment's classloader leak. See https://issues.jboss.org/browse/WFLY-1375
