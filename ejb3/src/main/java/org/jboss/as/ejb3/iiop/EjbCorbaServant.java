@@ -77,6 +77,8 @@ import org.wildfly.security.auth.server.SecurityIdentity;
 import org.wildfly.security.auth.server.ServerAuthenticationContext;
 import org.wildfly.security.evidence.PasswordGuessEvidence;
 import org.wildfly.security.manager.WildFlySecurityManager;
+import org.wildfly.transaction.client.ContextTransactionManager;
+import org.wildfly.transaction.client.LocalTransactionContext;
 
 /**
  * CORBA servant class for the <code>EJBObject</code>s of a given bean. An
@@ -265,6 +267,7 @@ public class EjbCorbaServant extends Servant implements InvokeHandler, LocalIIOP
                         tx = inboundTxCurrent.getCurrentTransaction();
                     if (tx != null) {
                         transactionManager.resume(tx);
+                        LocalTransactionContext.getCurrent().importProviderTransaction();
                     }
                     try {
                         Principal identityPrincipal = null;
@@ -373,8 +376,9 @@ public class EjbCorbaServant extends Servant implements InvokeHandler, LocalIIOP
                         }
                     } finally {
                         if (tx != null) {
-                            if (this.transactionManager.getStatus() != Status.STATUS_NO_TRANSACTION) {
-                                this.transactionManager.suspend();
+                            final ContextTransactionManager transactionManager = ContextTransactionManager.getInstance();
+                            if (transactionManager.getStatus() != Status.STATUS_NO_TRANSACTION) {
+                                transactionManager.suspend();
                             }
                         }
                     }
