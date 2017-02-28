@@ -267,8 +267,13 @@ public class EjbCorbaServant extends Servant implements InvokeHandler, LocalIIOP
                         tx = inboundTxCurrent.getCurrentTransaction();
                     if (tx != null) {
                         transactionManager.resume(tx);
-                        LocalTransactionContext.getCurrent().importProviderTransaction();
+                        if (! LocalTransactionContext.getCurrent().importProviderTransaction()) {
+                            // clean up
+                            transactionManager.suspend();
+                            throw EjbLogger.ROOT_LOGGER.failedToGetCurrentTransaction(null);
+                        }
                     }
+                    EjbLogger.ROOT_LOGGER.errorf("%%%% TX ASSOCIATION IS %s -> %s (tx current is %s)", tx, ContextTransactionManager.getInstance().getTransaction(), inboundTxCurrent);
                     try {
                         Principal identityPrincipal = null;
                         Principal principal = null;
@@ -418,6 +423,7 @@ public class EjbCorbaServant extends Servant implements InvokeHandler, LocalIIOP
         interceptorContext.setMethod(op.getMethod());
         interceptorContext.putPrivateData(ComponentView.class, componentView);
         interceptorContext.putPrivateData(Component.class, componentView.getComponent());
+        interceptorContext.setTransaction(ContextTransactionManager.getInstance().getTransaction());
     }
 
     private boolean handleIsIdentical(final org.omg.CORBA.Object val) throws RemoteException {

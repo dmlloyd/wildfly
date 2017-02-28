@@ -38,7 +38,6 @@ import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.jboss.tm.JBossXATerminator;
 import org.jboss.tm.usertx.UserTransactionRegistry;
-import org.jboss.tm.usertx.client.ServerVMClientUserTransaction;
 import org.omg.CORBA.ORB;
 import org.wildfly.transaction.client.ContextTransactionSynchronizationRegistry;
 import org.wildfly.transaction.client.LocalUserTransaction;
@@ -119,14 +118,13 @@ public final class ArjunaTransactionManagerService implements Service<com.arjuna
 
             // IIOP is enabled, so fire up JTS mode.
             jtaEnvironmentBean.getValue().setTransactionManagerClassName(com.arjuna.ats.jbossatx.jts.TransactionManagerDelegate.class.getName());
-            jtaEnvironmentBean.getValue().setTransactionSynchronizationRegistryClassName(com.arjuna.ats.internal.jta.transaction.jts.TransactionSynchronizationRegistryImple.class.getName());
 
             final com.arjuna.ats.jbossatx.jts.TransactionManagerService service = new com.arjuna.ats.jbossatx.jts.TransactionManagerService();
-            final ServerVMClientUserTransaction userTransaction = new ServerVMClientUserTransaction(service.getTransactionManager());
+            final LocalUserTransaction userTransaction = LocalUserTransaction.getInstance();
             jtaEnvironmentBean.getValue().setUserTransaction(userTransaction);
-            userTransactionRegistry.getValue().addProvider(userTransaction);
             service.setJbossXATerminator(xaTerminatorInjector.getValue());
-            service.setTransactionSynchronizationRegistry(new TransactionSynchronizationRegistryWrapper( new com.arjuna.ats.internal.jta.transaction.jts.TransactionSynchronizationRegistryImple()));
+            service.setTransactionSynchronizationRegistry(new TransactionSynchronizationRegistryWrapper(ContextTransactionSynchronizationRegistry.getInstance()));
+            service.setPropagateFullContext(true);
 
             objStoreBrowserTypes.put("StateManager/BasicAction/TwoPhaseCoordinator/ArjunaTransactionImple",
                     "com.arjuna.ats.arjuna.tools.osb.mbean.ActionBean");
