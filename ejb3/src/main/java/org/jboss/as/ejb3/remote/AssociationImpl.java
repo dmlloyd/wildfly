@@ -44,6 +44,7 @@ import org.jboss.ejb.client.EJBClientInvocationContext;
 import org.jboss.ejb.client.EJBIdentifier;
 import org.jboss.ejb.client.EJBLocator;
 import org.jboss.ejb.client.EJBMethodLocator;
+import org.jboss.ejb.client.EJBModuleIdentifier;
 import org.jboss.ejb.client.SessionID;
 import org.jboss.ejb.client.StatefulEJBLocator;
 import org.jboss.ejb.server.Association;
@@ -344,16 +345,16 @@ final class AssociationImpl implements Association {
     public ListenerHandle registerModuleAvailabilityListener(@NotNull final ModuleAvailabilityListener moduleAvailabilityListener) {
         final DeploymentRepositoryListener listener = new DeploymentRepositoryListener() {
             public void listenerAdded(final DeploymentRepository repository) {
-                List<ModuleAvailabilityListener.ModuleIdentifier> identifierList = new ArrayList<>();
+                List<EJBModuleIdentifier> identifierList = new ArrayList<>();
                 for (DeploymentModuleIdentifier identifier : repository.getModules().keySet()) {
-                    final ModuleAvailabilityListener.ModuleIdentifier moduleIdentifier = toModuleIdentifier(identifier);
-                    identifierList.add(moduleIdentifier);
+                    final EJBModuleIdentifier EJBModuleIdentifier = toModuleIdentifier(identifier);
+                    identifierList.add(EJBModuleIdentifier);
                 }
                 moduleAvailabilityListener.moduleAvailable(identifierList);
             }
 
-            private ModuleAvailabilityListener.ModuleIdentifier toModuleIdentifier(final DeploymentModuleIdentifier identifier) {
-                return new ModuleAvailabilityListener.ModuleIdentifier(identifier.getApplicationName(), identifier.getModuleName(), identifier.getDistinctName());
+            private EJBModuleIdentifier toModuleIdentifier(final DeploymentModuleIdentifier identifier) {
+                return new EJBModuleIdentifier(identifier.getApplicationName(), identifier.getModuleName(), identifier.getDistinctName());
             }
 
             public void deploymentAvailable(final DeploymentModuleIdentifier deployment, final ModuleDeployment moduleDeployment) {
