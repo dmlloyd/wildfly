@@ -56,6 +56,10 @@ import org.jboss.as.test.clustering.cluster.ejb.remote.bean.StatelessIncrementor
 import org.jboss.as.test.clustering.ejb.EJBDirectory;
 import org.jboss.as.test.clustering.ejb.RemoteEJBDirectory;
 import org.jboss.as.test.shared.TimeoutUtil;
+import org.jboss.ejb.client.ClusterAffinity;
+import org.jboss.ejb.client.EJBClient;
+import org.jboss.ejb.client.EJBIdentifier;
+import org.jboss.ejb.client.StatelessEJBLocator;
 import org.jboss.ejb.client.legacy.JBossEJBProperties;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -128,7 +132,13 @@ public class RemoteFailoverTestCase extends ClusterAbstractTestCase {
     private void testStatelessFailover(AuthenticationContext authenticationContext, Class<? extends Incrementor> beanClass) throws Exception {
         authenticationContext.runCallable(() -> {
             try (EJBDirectory context = new RemoteEJBDirectory(MODULE_NAME)) {
-                Incrementor bean = context.lookupStateless(beanClass, Incrementor.class);
+                Incrementor bean = EJBClient.createProxy(
+                    StatelessEJBLocator.create(
+                        Incrementor.class,
+                        new EJBIdentifier("", MODULE_NAME, beanClass.getSimpleName(), ""),
+                        new ClusterAffinity("ejb")
+                    )
+                );
 
                 // Allow sufficient time for client to receive full topology
                 Thread.sleep(CLIENT_TOPOLOGY_UPDATE_WAIT);
@@ -209,7 +219,14 @@ public class RemoteFailoverTestCase extends ClusterAbstractTestCase {
         JBossEJBProperties properties = JBossEJBProperties.fromClassPath(RemoteFailoverTestCase.class.getClassLoader(), CLIENT_PROPERTIES);
         properties.runCallable(() -> {
             try (EJBDirectory context = new RemoteEJBDirectory(MODULE_NAME)) {
-                Incrementor bean = context.lookupStateful(StatefulIncrementorBean.class, Incrementor.class);
+                // this approach is OK and supported, but it'd be better to fix the test to use a clustered JNDI lookup instead
+                Incrementor bean = EJBClient.createSessionProxy(
+                    StatelessEJBLocator.create(
+                        Incrementor.class,
+                        new EJBIdentifier("", "remote-failover-test", StatefulIncrementorBean.class.getSimpleName(), ""),
+                        new ClusterAffinity("ejb")
+                    )
+                );
 
                 Result<Integer> result = bean.increment();
                 String target = result.getNode();
@@ -303,11 +320,19 @@ public class RemoteFailoverTestCase extends ClusterAbstractTestCase {
         this.testConcurrentFailover(new RedeployLifecycle());
     }
 
+    @InSequence(7)
     public void testConcurrentFailover(Lifecycle lifecycle) throws Exception {
         JBossEJBProperties properties = JBossEJBProperties.fromClassPath(RemoteFailoverTestCase.class.getClassLoader(), CLIENT_PROPERTIES);
         properties.runCallable(() -> {
             try (EJBDirectory directory = new RemoteEJBDirectory(MODULE_NAME)) {
-                Incrementor bean = directory.lookupStateful(SlowToDestroyStatefulIncrementorBean.class, Incrementor.class);
+                // this approach is OK and supported, but it'd be better to fix the test to use a clustered JNDI lookup instead
+                Incrementor bean = EJBClient.createSessionProxy(
+                    StatelessEJBLocator.create(
+                        Incrementor.class,
+                        new EJBIdentifier("", "remote-failover-test", SlowToDestroyStatefulIncrementorBean.class.getSimpleName(), ""),
+                        new ClusterAffinity("ejb")
+                    )
+                );
                 AtomicInteger count = new AtomicInteger();
 
                 // Allow sufficient time for client to receive full topology
@@ -363,11 +388,18 @@ public class RemoteFailoverTestCase extends ClusterAbstractTestCase {
         JBossEJBProperties properties = JBossEJBProperties.fromClassPath(RemoteFailoverTestCase.class.getClassLoader(), CLIENT_PROPERTIES);
         properties.runCallable(() -> {
             try (EJBDirectory context = new RemoteEJBDirectory(MODULE_NAME)) {
-                Incrementor bean = context.lookupStateful(InfinispanExceptionThrowingIncrementorBean.class, Incrementor.class);
+                // this approach is OK and supported, but it'd be better to fix the test to use a clustered JNDI lookup instead
+                Incrementor bean = EJBClient.createSessionProxy(
+                    StatelessEJBLocator.create(
+                        Incrementor.class,
+                        new EJBIdentifier("", "remote-failover-test", InfinispanExceptionThrowingIncrementorBean.class.getSimpleName(), ""),
+                        new ClusterAffinity("ejb")
+                    )
+                );
 
                 bean.increment();
             } catch (Exception ejbException) {
-                assertTrue("Expected exception wrapped in EJBException", ejbException instanceof EJBException);
+                assertTrue("Expected exception wrapped in EJBException, got " + ejbException.getClass(), ejbException instanceof EJBException);
                 assertNull("Cause of EJBException has not been removed", ejbException.getCause());
                 return null;
             }
