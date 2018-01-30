@@ -223,9 +223,14 @@ public class CMTTxInterceptor implements Interceptor {
         try {
             return invocation.proceed();
         } catch (Throwable t) {
-            throw handleExceptionInOurTx(invocation, t, tx, component);
-        } finally {
-            endTransaction(tx);
+            final Exception e = handleExceptionInOurTx(invocation, t, tx, component);
+            try {
+                endTransaction(tx);
+            } catch (Throwable t2) {
+                t2.addSuppressed(t);
+                throw t2;
+            }
+            throw e;
         }
     }
 
