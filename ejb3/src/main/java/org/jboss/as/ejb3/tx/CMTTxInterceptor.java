@@ -23,6 +23,7 @@ package org.jboss.as.ejb3.tx;
 
 import static org.jboss.as.ejb3.tx.util.StatusHelper.statusAsString;
 
+import java.lang.reflect.UndeclaredThrowableException;
 import java.rmi.RemoteException;
 
 import javax.ejb.EJBException;
@@ -175,31 +176,6 @@ public class CMTTxInterceptor implements Interceptor {
         throw (Exception) t;
     }
 
-    public void handleExceptionInNoTx(InterceptorContext invocation, Throwable t, final EJBComponent component) throws Exception {
-        ApplicationExceptionDetails ae = component.getApplicationException(t.getClass(), invocation.getMethod());
-        if (ae != null) {
-            throw (Exception) t;
-        }
-
-        // if it's neither EJBException nor RemoteException
-        if (!(t instanceof EJBException || t instanceof RemoteException)) {
-            // errors and unchecked are wrapped into EJBException
-            if (t instanceof Error) {
-                //t = new EJBException(formatException("Unexpected Error", t));
-                Throwable cause = t;
-                t = EjbLogger.ROOT_LOGGER.unexpectedError();
-                t.initCause(cause);
-            } else if (t instanceof RuntimeException) {
-                t = new EJBException((Exception) t);
-            } else {
-                // an application exception
-                throw (Exception) t;
-            }
-        }
-
-        throw (Exception) t;
-    }
-
     public Object processInvocation(InterceptorContext invocation) throws Exception {
         final EJBComponent component = (EJBComponent) invocation.getPrivateData(Component.class);
         final ContextTransactionManager tm = ContextTransactionManager.getInstance();
@@ -241,10 +217,22 @@ public class CMTTxInterceptor implements Interceptor {
     protected Object invokeInNoTx(InterceptorContext invocation, final EJBComponent component) throws Exception {
         try {
             return invocation.proceed();
-        } catch (Throwable t) {
-            handleExceptionInNoTx(invocation, t, component);
+        } catch (EJBException | RemoteException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new EJBException(e);
+        } catch (Exception e) {
+            throw e;
+        } catch (Error e) {
+            ApplicationExceptionDetails ae = component.getApplicationException(e.getClass(), invocation.getMethod());
+            if (ae != null) {
+                throw e;
+            } else {
+                throw EjbLogger.ROOT_LOGGER.unexpectedError(e);
+            }
+        } catch (Throwable t2) {
+            throw new UndeclaredThrowableException(t2);
         }
-        throw new RuntimeException("UNREACHABLE");
     }
 
     protected Object invokeInOurTx(InterceptorContext invocation, final EJBComponent component) throws Exception {

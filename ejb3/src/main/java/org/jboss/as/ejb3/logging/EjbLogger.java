@@ -2931,7 +2931,7 @@ public interface EjbLogger extends BasicLogger {
     DeploymentUnitProcessingException ejbBusinessMethodMustBePublic(final Method method);
 
     @Message(id = 442, value = "Unexpected Error")
-    EJBException unexpectedError();
+    EJBException unexpectedError(@Cause Throwable cause);
 
     @Message(id = 443, value = "EJB 3.1 FR 13.3.3: BMT bean %s should complete transaction before returning.")
     String transactionNotComplete(String componentName);
