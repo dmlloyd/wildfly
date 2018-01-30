@@ -236,7 +236,6 @@ public class CMTTxInterceptor implements Interceptor {
     }
 
     protected Object invokeInOurTx(InterceptorContext invocation, final EJBComponent component) throws Exception {
-        ContextTransactionManager tm = ContextTransactionManager.getInstance();
         for (int i = 0; i < MAX_RETRIES; i++) {
             Transaction tx = beginTransaction();
             try {
