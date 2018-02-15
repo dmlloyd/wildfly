@@ -569,11 +569,11 @@ public abstract class EJBComponentDescription extends ComponentDescription {
                     @Override
                     public void configureDependency(final ServiceBuilder<?> serviceBuilder, final EJBComponentCreateService ejbComponentCreateService) throws DeploymentUnitProcessingException {
                         // add dependency on transaction manager
-                        serviceBuilder.addDependency(TxnServices.JBOSS_TXN_TRANSACTION_MANAGER, TransactionManager.class, ejbComponentCreateService.getTransactionManagerInjector());
+                        serviceBuilder.addDependency(TxnServices.JBOSS_TXN_TRANSACTION_MANAGER);
                         // add dependency on UserTransaction
-                        serviceBuilder.addDependency(TxnServices.JBOSS_TXN_USER_TRANSACTION, UserTransaction.class, ejbComponentCreateService.getUserTransactionInjector());
+                        serviceBuilder.addDependency(TxnServices.JBOSS_TXN_USER_TRANSACTION);
                         // add dependency on TransactionSynchronizationRegistry
-                        serviceBuilder.addDependency(TxnServices.JBOSS_TXN_SYNCHRONIZATION_REGISTRY, TransactionSynchronizationRegistry.class, ejbComponentCreateService.getTransactionSynchronizationRegistryInjector());
+                        serviceBuilder.addDependency(TxnServices.JBOSS_TXN_SYNCHRONIZATION_REGISTRY);
                     }
                 });
 

@@ -40,6 +40,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.as.ejb3.logging.EjbLogger;
 import org.wildfly.security.manager.WildFlySecurityManager;
+import org.wildfly.transaction.client.ContextTransactionManager;
 
 /**
  * @author <a href="mailto:cdewolf@redhat.com">Carlo de Wolf</a>
@@ -62,7 +63,7 @@ public class MessageEndpointInvocationHandler extends AbstractInvocationHandler 
 
     @Override
     public void afterDelivery() throws ResourceException {
-        final TransactionManager tm = getTransactionManager();
+        final TransactionManager tm = ContextTransactionManager.getInstance();
         try {
             if (currentTx != null) {
                 if (currentTx.getStatus() == Status.STATUS_MARKED_ROLLBACK)
@@ -98,7 +99,7 @@ public class MessageEndpointInvocationHandler extends AbstractInvocationHandler 
         // application class loader during the beforeDelivery call.
         previousClassLoader = WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(getApplicationClassLoader());
         try {
-            final TransactionManager tm = getTransactionManager();
+            final TransactionManager tm = ContextTransactionManager.getInstance();
             // TODO: in violation of JCA 1.6 FR 13.5.9?
             previousTx = tm.suspend();
             boolean isTransacted = service.isDeliveryTransacted(method);
@@ -150,10 +151,6 @@ public class MessageEndpointInvocationHandler extends AbstractInvocationHandler 
 
     protected final ClassLoader getApplicationClassLoader() {
         return this.service.getClassLoader();
-    }
-
-    protected final TransactionManager getTransactionManager() {
-        return service.getTransactionManager();
     }
 
     @Override

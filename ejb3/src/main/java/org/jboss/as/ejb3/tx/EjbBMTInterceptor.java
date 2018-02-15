@@ -34,6 +34,7 @@ import org.jboss.invocation.Interceptor;
 import org.jboss.invocation.InterceptorContext;
 import org.jboss.invocation.InterceptorFactory;
 import org.jboss.invocation.InterceptorFactoryContext;
+import org.wildfly.transaction.client.ContextTransactionManager;
 
 /**
  * EJB 3 13.6.1:
@@ -95,7 +96,7 @@ public class EjbBMTInterceptor extends BMTInterceptor {
     @Override
     protected Object handleInvocation(final InterceptorContext invocation) throws Exception {
         final EJBComponent ejbComponent = getComponent();
-        TransactionManager tm = ejbComponent.getTransactionManager();
+        TransactionManager tm = ContextTransactionManager.getInstance();
         assert tm.getTransaction() == null : "can't handle BMT transaction, there is a transaction active";
 
         boolean exceptionThrown = false;

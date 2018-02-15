@@ -29,6 +29,7 @@ import org.jboss.as.ejb3.component.EJBComponent;
 import org.jboss.as.ejb3.component.interceptors.AbstractEJBInterceptor;
 import org.jboss.as.ejb3.logging.EjbLogger;
 import org.jboss.invocation.InterceptorContext;
+import org.wildfly.transaction.client.ContextTransactionManager;
 
 /**
  * An interceptor which is responsible for identifying any remote transaction associated with the invocation
@@ -41,13 +42,7 @@ import org.jboss.invocation.InterceptorContext;
 @Deprecated
 class EJBRemoteTransactionPropagatingInterceptor extends AbstractEJBInterceptor {
 
-    /**
-     * Remote transactions repository
-     */
-    private final TransactionManager transactionManager;
-
-    EJBRemoteTransactionPropagatingInterceptor(final TransactionManager transactionManager) {
-        this.transactionManager = transactionManager;
+    EJBRemoteTransactionPropagatingInterceptor() {
     }
 
     /**
@@ -60,7 +55,7 @@ class EJBRemoteTransactionPropagatingInterceptor extends AbstractEJBInterceptor 
      */
     @Override
     public Object processInvocation(InterceptorContext context) throws Exception {
-        final TransactionManager transactionManager = this.transactionManager;
+        final TransactionManager transactionManager = ContextTransactionManager.getInstance();
         if (context.hasTransaction()) {
             // TODO: WFLY-7860
             try {

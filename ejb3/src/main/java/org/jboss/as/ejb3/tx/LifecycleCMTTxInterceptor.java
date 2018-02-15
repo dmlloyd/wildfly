@@ -94,7 +94,7 @@ public class LifecycleCMTTxInterceptor extends CMTTxInterceptor {
 
     @Override
     protected Object notSupported(InterceptorContext invocation, EJBComponent component) throws Exception {
-        TransactionManager tm = component.getTransactionManager();
+        TransactionManager tm = ContextTransactionManager.getInstance();
         Transaction tx = tm.getTransaction();
         int status = (tx != null) ? tx.getStatus() : Status.STATUS_NO_TRANSACTION;
         // If invocation was triggered from Synchronization.afterCompletion(...)

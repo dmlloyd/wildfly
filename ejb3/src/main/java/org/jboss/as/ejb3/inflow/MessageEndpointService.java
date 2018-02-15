@@ -31,8 +31,6 @@ import java.util.concurrent.TimeUnit;
 public interface MessageEndpointService<T> {
     Class<T> getMessageListenerInterface();
 
-    TransactionManager getTransactionManager();
-
     boolean isDeliveryTransacted(Method method) throws NoSuchMethodException;
 
     T obtain(long timeout, TimeUnit milliseconds);

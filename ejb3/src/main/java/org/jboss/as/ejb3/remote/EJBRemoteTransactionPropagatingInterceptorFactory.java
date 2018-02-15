@@ -45,6 +45,6 @@ class EJBRemoteTransactionPropagatingInterceptorFactory extends ComponentInterce
         if (!(component instanceof EJBComponent)) {
             throw EjbLogger.ROOT_LOGGER.notAnEJBComponent(component);
         }
-        return new EJBRemoteTransactionPropagatingInterceptor(((EJBComponent) component).getTransactionManager());
+        return new EJBRemoteTransactionPropagatingInterceptor();
     }
 }

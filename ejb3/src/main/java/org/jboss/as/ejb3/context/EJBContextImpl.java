@@ -38,6 +38,7 @@ import org.jboss.as.ejb3.component.EjbComponentInstance;
 import org.jboss.as.ejb3.component.allowedmethods.AllowedMethodsInformation;
 import org.jboss.as.ejb3.component.allowedmethods.MethodType;
 import org.jboss.invocation.InterceptorContext;
+import org.wildfly.transaction.client.LocalUserTransaction;
 
 /**
  * @author <a href="cdewolf@redhat.com">Carlo de Wolf</a>
@@ -102,7 +103,7 @@ public abstract class EJBContextImpl implements javax.ejb.EJBContext, Serializab
 
     public UserTransaction getUserTransaction() throws IllegalStateException {
         AllowedMethodsInformation.checkAllowed(MethodType.GET_USER_TRANSACTION);
-        return getComponent().getUserTransaction();
+        return LocalUserTransaction.getInstance();
     }
 
     @SuppressWarnings({"deprecation"})

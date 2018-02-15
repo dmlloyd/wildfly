@@ -84,6 +84,7 @@ import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.auth.server.SecurityIdentity;
 import org.wildfly.security.authz.Roles;
 import org.wildfly.security.manager.WildFlySecurityManager;
+import org.wildfly.transaction.client.ContextTransactionManager;
 
 /**
  * @author <a href="mailto:cdewolf@redhat.com">Carlo de Wolf</a>
@@ -118,9 +119,6 @@ public abstract class EJBComponent extends BasicComponent implements ServerActiv
     private final InvocationMetrics invocationMetrics = new InvocationMetrics();
     private final EJBSuspendHandlerService ejbSuspendHandlerService;
     private final ShutDownInterceptorFactory shutDownInterceptorFactory;
-    private final TransactionManager transactionManager;
-    private final TransactionSynchronizationRegistry transactionSynchronizationRegistry;
-    private final UserTransaction userTransaction;
     private final ServerSecurityManager serverSecurityManager;
     private final ControlPoint controlPoint;
     private final AtomicBoolean exceptionLoggingEnabled;
@@ -184,9 +182,6 @@ public abstract class EJBComponent extends BasicComponent implements ServerActiv
         this.timeoutInterceptors = Collections.unmodifiableMap(ejbComponentCreateService.getTimeoutInterceptors());
         this.shutDownInterceptorFactory = ejbComponentCreateService.getShutDownInterceptorFactory();
         this.ejbSuspendHandlerService = ejbComponentCreateService.getEJBSuspendHandler();
-        this.transactionManager = ejbComponentCreateService.getTransactionManager();
-        this.transactionSynchronizationRegistry = ejbComponentCreateService.getTransactionSynchronizationRegistry();
-        this.userTransaction = ejbComponentCreateService.getUserTransaction();
         this.serverSecurityManager = ejbComponentCreateService.getServerSecurityManager();
         this.controlPoint = ejbComponentCreateService.getControlPoint();
         this.exceptionLoggingEnabled = ejbComponentCreateService.getExceptionLoggingEnabled();
@@ -347,7 +342,7 @@ public abstract class EJBComponent extends BasicComponent implements ServerActiv
             throw EjbLogger.ROOT_LOGGER.failToCallgetRollbackOnly();
         }
         try {
-            TransactionManager tm = this.getTransactionManager();
+            TransactionManager tm = ContextTransactionManager.getInstance();
 
             // The getRollbackOnly method should be used only in the context of a transaction.
             if (tm.getTransaction() == null) {
@@ -412,14 +407,6 @@ public abstract class EJBComponent extends BasicComponent implements ServerActiv
         return txAttr;
     }
 
-    public TransactionManager getTransactionManager() {
-        return this.transactionManager;
-    }
-
-    public TransactionSynchronizationRegistry getTransactionSynchronizationRegistry() {
-        return this.transactionSynchronizationRegistry;
-    }
-
     public int getTransactionTimeout(final MethodIntf methodIntf, final Method method) {
         return getTransactionTimeout(methodIntf, MethodIdentifier.getIdentifierForMethod(method));
     }
@@ -433,10 +420,6 @@ public abstract class EJBComponent extends BasicComponent implements ServerActiv
             return -1;
 
         return txTimeout;
-    }
-
-    public UserTransaction getUserTransaction() throws IllegalStateException {
-        return this.userTransaction;
     }
 
     public boolean isBeanManagedTransaction() {
@@ -515,7 +498,7 @@ public abstract class EJBComponent extends BasicComponent implements ServerActiv
         }
         try {
             // get the transaction manager
-            TransactionManager tm = getTransactionManager();
+            TransactionManager tm = ContextTransactionManager.getInstance();
             // check if there's a tx in progress. If not, then it's an error to call setRollbackOnly()
             if (tm.getTransaction() == null) {
                 throw EjbLogger.ROOT_LOGGER.failToCallSetRollbackOnlyWithNoTx();

@@ -31,6 +31,7 @@ import org.jboss.as.ejb3.logging.EjbLogger;
 import org.jboss.as.ejb3.component.EJBComponent;
 import org.jboss.as.ejb3.component.stateful.StatefulSessionComponentInstance;
 import org.jboss.invocation.InterceptorContext;
+import org.wildfly.transaction.client.ContextTransactionManager;
 
 import static org.jboss.as.ejb3.tx.util.StatusHelper.statusAsString;
 
@@ -55,7 +56,7 @@ public class StatefulBMTInterceptor extends BMTInterceptor {
 
     private void checkBadStateful() {
         int status = Status.STATUS_NO_TRANSACTION;
-        TransactionManager tm = getComponent().getTransactionManager();
+        TransactionManager tm = ContextTransactionManager.getInstance();
         try {
             status = tm.getStatus();
         } catch (SystemException ex) {
@@ -80,7 +81,7 @@ public class StatefulBMTInterceptor extends BMTInterceptor {
     protected Object handleInvocation(final InterceptorContext invocation) throws Exception {
         final StatefulSessionComponentInstance instance = (StatefulSessionComponentInstance) invocation.getPrivateData(ComponentInstance.class);
 
-        TransactionManager tm = getComponent().getTransactionManager();
+        TransactionManager tm = ContextTransactionManager.getInstance();
         assert tm.getTransaction() == null : "can't handle BMT transaction, there is a transaction active";
 
         // Is the instance already associated with a transaction?

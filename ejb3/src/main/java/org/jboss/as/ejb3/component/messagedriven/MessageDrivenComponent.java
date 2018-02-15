@@ -49,6 +49,7 @@ import org.jboss.invocation.Interceptor;
 import org.jboss.jca.core.spi.rar.Endpoint;
 import org.jboss.msc.service.ServiceName;
 import org.wildfly.security.manager.WildFlySecurityManager;
+import org.wildfly.transaction.client.ContextTransactionManager;
 
 import static java.security.AccessController.doPrivileged;
 import static java.util.Collections.emptyMap;
@@ -151,11 +152,6 @@ public class MessageDrivenComponent extends EJBComponent implements PooledCompon
             @Override
             public Class<Object> getMessageListenerInterface() {
                 return (Class<Object>) messageListenerInterface;
-            }
-
-            @Override
-            public TransactionManager getTransactionManager() {
-                return MessageDrivenComponent.this.getTransactionManager();
             }
 
             @Override

@@ -41,6 +41,7 @@ import org.jboss.invocation.InterceptorContext;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import org.wildfly.transaction.client.ContextTransactionSynchronizationRegistry;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
@@ -80,7 +81,7 @@ public class StatefulSessionSynchronizationInterceptorTestCase {
         Cache<SessionID, StatefulSessionComponentInstance> cache = mock(Cache.class);
         when(component.getCache()).thenReturn(cache);
         final TransactionSynchronizationRegistry transactionSynchronizationRegistry = mock(TransactionSynchronizationRegistry.class);
-        when(component.getTransactionSynchronizationRegistry()).thenReturn(transactionSynchronizationRegistry);
+        when((TransactionSynchronizationRegistry)ContextTransactionSynchronizationRegistry.getInstance()).thenReturn(transactionSynchronizationRegistry);
         when(transactionSynchronizationRegistry.getTransactionKey()).thenReturn("TX1");
         final List<Synchronization> synchronizations = new LinkedList<Synchronization>();
         doAnswer(new Answer<Void>() {

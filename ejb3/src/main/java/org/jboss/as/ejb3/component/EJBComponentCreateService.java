@@ -99,9 +99,7 @@ public class EJBComponentCreateService extends BasicComponentCreateService {
     private final String distinctName;
     private final String policyContextID;
 
-    private final InjectedValue<TransactionManager> transactionManagerInjectedValue = new InjectedValue<>();
     private final InjectedValue<UserTransaction> userTransactionInjectedValue = new InjectedValue<>();
-    private final InjectedValue<TransactionSynchronizationRegistry> transactionSynchronizationRegistryValue = new InjectedValue<TransactionSynchronizationRegistry>();
     private final InjectedValue<ServerSecurityManager> serverSecurityManagerInjectedValue = new InjectedValue<>();
     private final InjectedValue<ControlPoint> controlPoint = new InjectedValue<>();
     private final InjectedValue<AtomicBoolean> exceptionLoggingEnabled = new InjectedValue<>();
@@ -338,30 +336,6 @@ public class EJBComponentCreateService extends BasicComponentCreateService {
 
     public String getModuleName() {
         return moduleName;
-    }
-
-    Injector<TransactionManager> getTransactionManagerInjector() {
-        return this.transactionManagerInjectedValue;
-    }
-
-    TransactionManager getTransactionManager() {
-        return this.transactionManagerInjectedValue.getValue();
-    }
-
-    Injector<UserTransaction> getUserTransactionInjector() {
-        return this.userTransactionInjectedValue;
-    }
-
-    UserTransaction getUserTransaction() {
-        return this.userTransactionInjectedValue.getValue();
-    }
-
-    Injector<TransactionSynchronizationRegistry> getTransactionSynchronizationRegistryInjector() {
-        return transactionSynchronizationRegistryValue;
-    }
-
-    TransactionSynchronizationRegistry getTransactionSynchronizationRegistry() {
-        return transactionSynchronizationRegistryValue.getOptionalValue();
     }
 
     public Injector<EJBSuspendHandlerService> getEJBSuspendHandlerInjector() {

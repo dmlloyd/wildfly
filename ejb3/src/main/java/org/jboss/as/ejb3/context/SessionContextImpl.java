@@ -37,6 +37,7 @@ import org.jboss.as.ejb3.component.session.SessionBeanComponent;
 import org.jboss.as.ejb3.component.session.SessionBeanComponentInstance;
 import org.jboss.as.ejb3.component.stateful.StatefulSessionComponent;
 import org.jboss.invocation.InterceptorContext;
+import org.wildfly.transaction.client.LocalUserTransaction;
 
 /**
  * Implementation of the SessionContext interface.
@@ -118,7 +119,7 @@ public class SessionContextImpl extends EJBContextImpl implements SessionContext
     @Override
     public UserTransaction getUserTransaction() throws IllegalStateException {
         AllowedMethodsInformation.checkAllowed(MethodType.GET_USER_TRANSACTION);
-        return getComponent().getUserTransaction();
+        return LocalUserTransaction.getInstance();
     }
 
     @Override
