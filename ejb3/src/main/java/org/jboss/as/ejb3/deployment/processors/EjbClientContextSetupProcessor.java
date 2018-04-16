@@ -173,7 +173,13 @@ public class EjbClientContextSetupProcessor implements DeploymentUnitProcessor {
                         // this is cheating but it works for our purposes
                         AuthenticationContext authenticationContext = authenticationContextManager.getClassLoaderDefault(classLoader);
                         if (authenticationContext == null) {
-                            authenticationContext = authenticationContextManager.get();
+                            authenticationContext = authenticationContextManager.getThreadDefault();
+                        }
+                        if (authenticationContext == null) {
+                            authenticationContext = authenticationContextManager.getGlobalDefault();
+                        }
+                        if (authenticationContext == null) {
+                            authenticationContext = AuthenticationContext.empty();
                         }
                         final AuthenticationContext finalAuthenticationContext = authenticationContext;
                         authenticationContextManager.setClassLoaderDefaultSupplier(classLoader, () -> {
